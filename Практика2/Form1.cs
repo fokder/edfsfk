@@ -1,353 +1,251 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.IO;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Практика2
 {
     public partial class Form1 : Form
     {
-        private void SortTable(bool reverse)
-        {
-            List<string[]> records = new List<string[]>();
+        private bool changesMade;
+        private string filePath = "data.txt";
+        private TextBox[] fields;
+        private readonly int[] limits = { 20, 20, 15, 100 };
 
-            foreach (DataGridViewRow row in dataGridView1.Rows)
-            {
-                if (row.Cells[0].Value != null &&
-                    row.Cells[0].Value.ToString() != "")
-                {
-                    string[] person = new string[4];
-
-                    for (int j = 0; j < 4; j++)
-                    {
-                        person[j] = row.Cells[j].Value?.ToString() ?? "";
-                    }
-
-                    records.Add(person);
-                }
-            }
-
-            records.Sort((a, b) =>
-                System.StringComparer.Create(
-                    new System.Globalization.CultureInfo("uk-UA"), false)
-                .Compare(a[0], b[0]));
-
-            if (reverse)
-                records.Reverse();
-
-            updatingTable = true;
-
-            try
-            {
-                dataGridView1.Rows.Clear();
-
-                foreach (string[] person in records)
-                {
-                    dataGridView1.Rows.Add(person);
-                }
-            }
-            finally
-            {
-                updatingTable = false;
-            }
-
-            newComboBox();
-            changesMade = true;
-        }
         public Form1()
         {
             InitializeComponent();
+            // Порядок полів такий самий, як порядок стовпців таблиці.
+            fields = new[] { textBox1, textBox2, textBox4, textBox3 };
+            for (int i = 0; i < fields.Length; i++)
+                fields[i].MaxLength = limits[i];
 
-            dataGridView1.CellValueChanged += dataGridView1_CellValueChanged;
-            this.FormClosing += Form1_FormClosing;
-        }
-        private void dataGridView1_CellValueChanged(object sender, DataGridViewCellEventArgs e)
-        {
-            if (!updatingTable && e.RowIndex >= 0)
-            {
-                changesMade = true;
-                newComboBox();
-            }
-        }
-        private void кінецьToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            this.Close();
+            // Записи змінюємо через поля на другій вкладці.
+            dataGridView1.ReadOnly = true;
+            dataGridView1.AllowUserToAddRows = false;
+            dataGridView1.AllowUserToDeleteRows = false;
+            foreach (DataGridViewColumn column in dataGridView1.Columns)
+                column.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+            comboBox1.DropDownStyle = ComboBoxStyle.DropDownList;
+            comboBox1.SelectedIndexChanged += ShowRecord;
+            button1.Click += (s, e) => SelectRecord(comboBox1.SelectedIndex - 1);
+            button4.Click += (s, e) => SelectRecord(comboBox1.SelectedIndex + 1);
+            button3.Text = "Видалити";
+            groupBox1.Text = "Дані запису";
+            зберегтиЗміниУСпискуЗаписуToolStripMenuItem.Text = "Додати / зберегти запис";
+            редагуватиToolStripMenuItem.DropDownItems.Insert(0,
+                new ToolStripMenuItem("Новий запис", null, NewRecord));
+            FormClosing += Form1_FormClosing;
         }
 
-        private void проПрограмуToolStripMenuItem_Click(object sender, EventArgs e)
+        private void SelectRecord(int index)
         {
-            Form2 f = new Form2();
-            f.ShowDialog();
+            if (index >= 0 && index < comboBox1.Items.Count)
+                comboBox1.SelectedIndex = index;
         }
 
-        public struct info
+        private void ShowRecord(object sender, EventArgs e)
         {
-            public string SureName, name, adress, number;
-        };
+            int index = comboBox1.SelectedIndex;
+            for (int i = 0; i < fields.Length; i++)
+                fields[i].Text = index < 0 ? "" :
+                    Convert.ToString(dataGridView1.Rows[index].Cells[i].Value);
+            if (index >= 0)
+                dataGridView1.CurrentCell = dataGridView1.Rows[index].Cells[0];
+        }
 
-        info[] array = new info[100];
-        int n = 0;
-        bool changesMade = false;
-        bool updatingTable = false;
-        string filePath = Path.Combine(
-    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-    "Телефонний довідник",
-    "data.txt");
-        private void newComboBox()
+        private void UpdateList(int selectedIndex)
         {
-            n = 0;
             comboBox1.Items.Clear();
-
-            for (int i = 0; i < dataGridView1.RowCount; i++)
-            {
-                object sureNameValue =
-                    dataGridView1.Rows[i].Cells[0].Value;
-
-                if (sureNameValue != null)
-                {
-                    string sureName = sureNameValue.ToString();
-                    comboBox1.Items.Add(sureName);
-                    n++;
-                }
-            }
+            foreach (DataGridViewRow row in dataGridView1.Rows)
+                comboBox1.Items.Add(Convert.ToString(row.Cells[0].Value));
+            SelectRecord(selectedIndex);
+            ShowRecord(this, EventArgs.Empty);
         }
 
-        private void SaveData(string path)
+        private void NewRecord(object sender, EventArgs e)
         {
-            dataGridView1.EndEdit();
-
-            string folder = Path.GetDirectoryName(path);
-            Directory.CreateDirectory(folder);
-
-            using (StreamWriter file = new StreamWriter(path))
-            {
-                foreach (DataGridViewRow row in dataGridView1.Rows)
-                {
-                    if (row.IsNewRow)
-                        continue;
-
-                    string surname = row.Cells[0].Value?.ToString() ?? "";
-                    string name = row.Cells[1].Value?.ToString() ?? "";
-                    string phone = row.Cells[2].Value?.ToString() ?? "";
-                    string address = row.Cells[3].Value?.ToString() ?? "";
-
-                    if (string.IsNullOrWhiteSpace(surname))
-                        continue;
-
-                    file.WriteLine(surname + "\t" +
-                                   name + "\t" +
-                                   phone + "\t" +
-                                   address);
-                }
-            }
-
-            changesMade = false;
-        }
-
-
-
-        private void прочитатиЗФайлаToolStripMenuItem_Click_1(object sender, EventArgs e)
-        {
-            if (!File.Exists(filePath))
-            {
-                MessageBox.Show("Файл ще не створено!\n" + filePath);
-                return;
-            }
-
-            if (changesMade)
-            {
-                DialogResult answer = MessageBox.Show(
-                    "Незбережені зміни буде втрачено. Продовжити?",
-                    "Читання файлу",
-                    MessageBoxButtons.YesNo);
-
-                if (answer == DialogResult.No)
-                    return;
-            }
-
-            updatingTable = true;
-
-            try
-            {
-                List<string[]> records = new List<string[]>();
-
-                using (StreamReader file = new StreamReader(filePath))
-                {
-                    string line;
-
-                    while ((line = file.ReadLine()) != null)
-                    {
-                        string[] data = line.Split('\t');
-
-                        if (data.Length >= 4)
-                        {
-                            records.Add(new string[]
-                            {
-                        data[0],
-                        data[1],
-                        data[2],
-                        data[3]
-                            });
-                        }
-                    }
-                }
-
-                dataGridView1.Rows.Clear();
-
-                foreach (string[] person in records)
-                {
-                    dataGridView1.Rows.Add(person);
-                }
-
-                newComboBox();
-                changesMade = false;
-
-                MessageBox.Show("Записи успішно завантажено!");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Помилка читання: " + ex.Message);
-            }
-            finally
-            {
-                updatingTable = false;
-            }
-        }
-
-        private void записатиУФайлToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                SaveData(filePath);
-
-                MessageBox.Show("Дані успішно збережено!\n" + filePath);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Помилка запису: " + ex.Message);
-            }
-
-        }
-
-        private void Form1_Load(object sender, EventArgs e)
-        {
-       
-            this.StartPosition = FormStartPosition.CenterScreen;
+            comboBox1.SelectedIndex = -1;
+            ShowRecord(sender, e);
+            tabControl1.SelectedTab = tabPage2;
+            textBox1.Focus();
         }
 
         private void зберегтиЗміниУСпискуЗаписуToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (comboBox1.SelectedIndex < 0)
+            string[] record = new string[4];
+            for (int i = 0; i < record.Length; i++)
             {
-                MessageBox.Show("Виберіть запис!");
-                return;
-            }
-
-            dataGridView1.Rows[comboBox1.SelectedIndex].Cells[0].Value = textBox1.Text;
-            dataGridView1.Rows[comboBox1.SelectedIndex].Cells[1].Value = textBox2.Text;
-            dataGridView1.Rows[comboBox1.SelectedIndex].Cells[2].Value = textBox4.Text;
-            dataGridView1.Rows[comboBox1.SelectedIndex].Cells[3].Value = textBox3.Text;
-
-            newComboBox();
-            changesMade = true;
-        }
-
-        private void button2_Click(object sender, EventArgs e)
-        {
-            string surname = textBox5.Text;
-            bool found = false;
-
-            for (int i = 0; i < dataGridView1.Rows.Count; i++)
-            {
-                if (dataGridView1.Rows[i].Cells[0].Value != null)
+                record[i] = fields[i].Text.Trim();
+                if (!ValidField(record[i], limits[i]))
                 {
-                    if (dataGridView1.Rows[i].Cells[0].Value.ToString() == surname)
-                    {
-                        textBox1.Text = dataGridView1.Rows[i].Cells[0].Value?.ToString() ?? "";
-                        textBox2.Text = dataGridView1.Rows[i].Cells[1].Value?.ToString() ?? "";
-                        textBox4.Text = dataGridView1.Rows[i].Cells[2].Value?.ToString() ?? "";
-                        textBox3.Text = dataGridView1.Rows[i].Cells[3].Value?.ToString() ?? "";
-
-                        found = true;
-                        break;
-                    }
+                    MessageBox.Show("Заповніть усі поля. Ліміти: прізвище та ім’я — 20, " +
+                        "телефон — 15, адреса — 100 символів. Табуляція та переноси заборонені.");
+                    return;
                 }
             }
 
-            if (found == false)
-            {
-                MessageBox.Show("Такого прізвища немає!");
-            }
+            int index = comboBox1.SelectedIndex;
+            if (index < 0)
+                index = dataGridView1.Rows.Add(record);
+            else
+                for (int i = 0; i < record.Length; i++)
+                    dataGridView1.Rows[index].Cells[i].Value = record[i];
+            changesMade = true;
+            UpdateList(index);
+        }
+
+        private static bool ValidField(string value, int limit)
+        {
+            return !string.IsNullOrWhiteSpace(value) && value.Length <= limit &&
+                value.IndexOfAny(new[] { '\t', '\r', '\n' }) < 0;
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
-            textBox1.Clear();
-            textBox2.Clear();
-            textBox3.Clear();
-            textBox4.Clear();
-
-     
+            int index = comboBox1.SelectedIndex;
+            if (index < 0) return;
+            dataGridView1.Rows.RemoveAt(index);
+            changesMade = true;
+            UpdateList(Math.Min(index, dataGridView1.Rows.Count - 1));
         }
 
-        private void аЯToolStripMenuItem_Click(object sender, EventArgs e)
+        private void button2_Click(object sender, EventArgs e)
         {
-            SortTable(false);
-        }
-
-        private void яАToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            SortTable(true);
-        }
-        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            dataGridView1.EndEdit();
-
-            if (changesMade == true)
-            {
-                DialogResult result = MessageBox.Show(
-                    "Зберегти зміни перед виходом?",
-                    "Телефонний довідник",
-                    MessageBoxButtons.YesNoCancel);
-
-                if (result == DialogResult.Yes)
+            for (int i = 0; i < comboBox1.Items.Count; i++)
+                if (string.Equals(comboBox1.Items[i].ToString(), textBox5.Text.Trim(),
+                    StringComparison.CurrentCultureIgnoreCase))
                 {
-                    SaveFileDialog save = new SaveFileDialog();
-
-                    save.Filter = "Текстові файли (*.txt)|*.txt";
-                    save.FileName = filePath;
-
-                    if (save.ShowDialog() == DialogResult.OK)
-                    {
-                        try
-                        {
-                            SaveData(save.FileName);
-                            filePath = save.FileName;
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show("Помилка: " + ex.Message);
-                            e.Cancel = true;
-                        }
-                    }
-                    else
-                    {
-                        e.Cancel = true;
-                    }
+                    SelectRecord(i);
+                    return;
                 }
+            MessageBox.Show("Такого прізвища немає!");
+        }
 
-                if (result == DialogResult.Cancel)
+        // Файл: один запис у рядку, чотири поля розділено табуляцією.
+        private List<string[]> GetRecords()
+        {
+            var records = new List<string[]>();
+            foreach (DataGridViewRow row in dataGridView1.Rows)
+            {
+                string[] record = new string[4];
+                for (int i = 0; i < record.Length; i++)
+                    record[i] = Convert.ToString(row.Cells[i].Value);
+                records.Add(record);
+            }
+            return records;
+        }
+
+        private bool SaveData()
+        {
+            using (var dialog = new SaveFileDialog())
+            {
+                dialog.Filter = "Текстові файли (*.txt)|*.txt";
+                dialog.FileName = filePath;
+                if (dialog.ShowDialog() != DialogResult.OK) return false;
+                try
                 {
-                    e.Cancel = true;
+                    var lines = new List<string>();
+                    foreach (string[] record in GetRecords())
+                        lines.Add(string.Join("\t", record));
+                    File.WriteAllLines(dialog.FileName, lines);
+                    filePath = dialog.FileName;
+                    changesMade = false;
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Помилка запису: " + ex.Message);
+                    return false;
                 }
             }
         }
+
+        private bool ConfirmChanges()
+        {
+            if (!changesMade) return true;
+            DialogResult answer = MessageBox.Show("Зберегти зміни?", "Телефонний довідник",
+                MessageBoxButtons.YesNoCancel);
+            return answer == DialogResult.No || (answer == DialogResult.Yes && SaveData());
+        }
+
+        private void прочитатиЗФайлаToolStripMenuItem_Click_1(object sender, EventArgs e)
+        {
+            if (!ConfirmChanges()) return;
+            using (var dialog = new OpenFileDialog())
+            {
+                dialog.Filter = "Текстові файли (*.txt)|*.txt";
+                if (dialog.ShowDialog() != DialogResult.OK) return;
+                try
+                {
+                    // Спочатку перевіряємо весь файл, щоб не втратити поточні записи.
+                    var records = new List<string[]>();
+                    foreach (string line in File.ReadAllLines(dialog.FileName))
+                    {
+                        string[] record = line.Split('\t');
+                        if (record.Length != 4)
+                            throw new FormatException("Кожен рядок має містити чотири поля.");
+                        for (int i = 0; i < record.Length; i++)
+                            if (!ValidField(record[i], limits[i]))
+                                throw new FormatException("Порожнє або надто довге поле у файлі.");
+                        records.Add(record);
+                    }
+                    dataGridView1.Rows.Clear();
+                    foreach (string[] record in records)
+                        dataGridView1.Rows.Add(record);
+                    filePath = dialog.FileName;
+                    changesMade = false;
+                    UpdateList(0);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Помилка читання: " + ex.Message);
+                }
+            }
+        }
+
+        // Порівнюємо літери за їхнім місцем в українському алфавіті.
+        private static int CompareSurnames(string first, string second)
+        {
+            const string alphabet = "АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ";
+            first = first.ToUpperInvariant();
+            second = second.ToUpperInvariant();
+
+            for (int i = 0; i < Math.Min(first.Length, second.Length); i++)
+            {
+                int a = alphabet.IndexOf(first[i]);
+                int b = alphabet.IndexOf(second[i]);
+                // Інші символи розміщуємо після українських літер за кодом символу.
+                if (a < 0) a = alphabet.Length + first[i];
+                if (b < 0) b = alphabet.Length + second[i];
+                if (a != b) return a.CompareTo(b);
+            }
+            return first.Length.CompareTo(second.Length);
+        }
+
+        private void SortTable(bool reverse)
+        {
+            var records = GetRecords();
+            records.Sort((a, b) => CompareSurnames(a[0], b[0]));
+            if (reverse) records.Reverse();
+            dataGridView1.Rows.Clear();
+            foreach (string[] record in records)
+                dataGridView1.Rows.Add(record);
+            UpdateList(0);
+            changesMade = true;
+        }
+
+        private void аЯToolStripMenuItem_Click(object sender, EventArgs e) { SortTable(false); }
+        private void яАToolStripMenuItem_Click(object sender, EventArgs e) { SortTable(true); }
+        private void записатиУФайлToolStripMenuItem_Click(object sender, EventArgs e) { SaveData(); }
+        private void кінецьToolStripMenuItem_Click(object sender, EventArgs e) { Close(); }
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e) { e.Cancel = !ConfirmChanges(); }
+
+        private void проПрограмуToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (var form = new Form2())
+                form.ShowDialog(this);
+        }
     }
-}      
-    
+}

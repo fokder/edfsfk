@@ -1,0 +1,12 @@
+C:\Users\fokde\source\repos\Практика2\Практика2\bin\Debug\Практика2.exe.config
+C:\Users\fokde\source\repos\Практика2\Практика2\bin\Debug\Практика2.exe
+C:\Users\fokde\source\repos\Практика2\Практика2\bin\Debug\Практика2.pdb
+C:\Users\fokde\source\repos\Практика2\Практика2\obj\Debug\Практика2.csproj.AssemblyReference.cache
+C:\Users\fokde\source\repos\Практика2\Практика2\obj\Debug\Практика2.Form1.resources
+C:\Users\fokde\source\repos\Практика2\Практика2\obj\Debug\Практика2.Properties.Resources.resources
+C:\Users\fokde\source\repos\Практика2\Практика2\obj\Debug\Практика2.csproj.GenerateResource.cache
+C:\Users\fokde\source\repos\Практика2\Практика2\obj\Debug\Практика2.csproj.CoreCompileInputs.cache
+C:\Users\fokde\source\repos\Практика2\Практика2\obj\Debug\Практика2.exe
+C:\Users\fokde\source\repos\Практика2\Практика2\obj\Debug\Практика2.pdb
+C:\Users\fokde\source\repos\Практика2\Практика2\obj\Debug\Практика2.exe.config
+C:\Users\fokde\source\repos\Практика2\Практика2\obj\Debug\Практика2.Form2.resources

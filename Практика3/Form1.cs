@@ -1,6 +1,5 @@
 using System;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Windows.Forms;
 
@@ -8,209 +7,217 @@ namespace Практика3
 {
     public partial class Form1 : Form
     {
-        private Bitmap canvas;
-        private bool drawing;
-        private Point previousPoint;
-        private Color brushColor = Color.Black;
-        private TextBox[] coordinateBoxes;
-        private Label[] coordinateLabels;
+        // Змінна Drow та обробники — за першим проєктом методички.
+        private bool Drow;
+        private Color brushColor = Color.Violet;
+        // Bitmap із другого прикладу потрібний для збереження всього рисунка.
+        private Bitmap bmp_for_draw;
 
         public Form1()
         {
             InitializeComponent();
-            coordinateBoxes = new[] { textBox1, textBox2, textBox3, textBox4, textBox5, textBox6 };
-            coordinateLabels = new[] { label1, label2, label3, label4, label5, label6 };
-            canvas = new Bitmap(pictureBox1.Width, pictureBox1.Height);
-            pictureBox1.Image = canvas;
-            ClearCanvas();
-            comboBox1_SelectedIndexChanged(this, EventArgs.Empty);
+            bmp_for_draw = new Bitmap(pictureBox1.Width, pictureBox1.Height);
+            pictureBox1.Image = bmp_for_draw;
+            using (Graphics GC = Graphics.FromImage(bmp_for_draw))
+                GC.Clear(SystemColors.Window);
         }
 
-        private void ClearCanvas()
+        private void Form1_Load(object sender, EventArgs e)
         {
-            using (Graphics g = Graphics.FromImage(canvas))
-                g.Clear(Color.White);
-            pictureBox1.Invalidate();
+            this.Text = "Painting";
+            button1.Text = "Paint";
+            button2.Text = "Clear";
+            button3.Text = "Color";
+            button4.Text = "Text";
         }
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            int shape = comboBox1.SelectedIndex;
-            string[] names = { "X1", "Y1", "X2", "Y2", "X3", "Y3" };
-            if (shape == 2 || shape == 3)
-                names = new[] { "X", "Y", "Ширина", "Висота", "", "" };
-
-            for (int i = 0; i < coordinateBoxes.Length; i++)
-            {
-                bool visible = shape >= 0 && (i < 4 || shape == 1);
-                coordinateBoxes[i].Visible = visible;
-                coordinateLabels[i].Visible = visible;
-                coordinateLabels[i].Text = names[i];
-            }
-            checkBox1.Visible = shape == 2 || shape == 3;
-            button1.Enabled = shape >= 0;
+            textBox1.Visible = true;
+            textBox2.Visible = true;
+            textBox3.Visible = true;
+            textBox4.Visible = true;
+            textBox5.Visible = comboBox1.SelectedIndex == 1;
+            textBox6.Visible = comboBox1.SelectedIndex == 1;
+            checkBox1.Visible = comboBox1.SelectedIndex == 2 || comboBox1.SelectedIndex == 3;
+            button1.Enabled = true;
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
-            int shape = comboBox1.SelectedIndex;
-            if (shape < 0) return;
-            int count = shape == 1 ? 6 : 4;
-            int[] values = new int[count];
-            for (int i = 0; i < count; i++)
+            try
             {
-                if (!int.TryParse(coordinateBoxes[i].Text, out values[i]) ||
-                    values[i] < 0 || values[i] > 10000)
+                // Замість CreateGraphics малюємо на Bitmap, щоб рисунок можна було зберегти.
+                using (Graphics Graf = Graphics.FromImage(bmp_for_draw))
                 {
-                    MessageBox.Show("Координати та розміри мають бути цілими числами від 0 до 10000.");
-                    return;
-                }
-            }
-            if ((shape == 2 || shape == 3) && (values[2] == 0 || values[3] == 0))
-            {
-                MessageBox.Show("Ширина та висота мають бути більшими за нуль.");
-                return;
-            }
+                    if (comboBox1.SelectedIndex == 0)
+                        Graf.DrawLine(Pens.Black,
+                            Convert.ToInt32(textBox1.Text), Convert.ToInt32(textBox2.Text),
+                            Convert.ToInt32(textBox3.Text), Convert.ToInt32(textBox4.Text));
 
-            using (Graphics g = Graphics.FromImage(canvas))
-            using (Pen pen = new Pen(brushColor, (float)numericUpDown1.Value))
-            using (Brush brush = new SolidBrush(brushColor))
-            {
-                if (shape == 0)
-                    g.DrawLine(pen, values[0], values[1], values[2], values[3]);
-                if (shape == 1)
-                {
-                    Point[] points = {
-                        new Point(values[0], values[1]),
-                        new Point(values[2], values[3]),
-                        new Point(values[4], values[5])
-                    };
-                    g.DrawPolygon(pen, points);
+                    if (comboBox1.SelectedIndex == 1)
+                    {
+                        Graf.DrawLine(Pens.Black,
+                            Convert.ToInt32(textBox1.Text), Convert.ToInt32(textBox4.Text),
+                            Convert.ToInt32(textBox2.Text), Convert.ToInt32(textBox5.Text));
+                        Graf.DrawLine(Pens.Black,
+                            Convert.ToInt32(textBox2.Text), Convert.ToInt32(textBox5.Text),
+                            Convert.ToInt32(textBox3.Text), Convert.ToInt32(textBox6.Text));
+                        Graf.DrawLine(Pens.Black,
+                            Convert.ToInt32(textBox3.Text), Convert.ToInt32(textBox6.Text),
+                            Convert.ToInt32(textBox1.Text), Convert.ToInt32(textBox4.Text));
+                    }
+
+                    if (comboBox1.SelectedIndex == 2 || comboBox1.SelectedIndex == 3)
+                    {
+                        int x = Convert.ToInt32(textBox1.Text);
+                        int y = Convert.ToInt32(textBox2.Text);
+                        int width = Convert.ToInt32(textBox3.Text);
+                        int height = Convert.ToInt32(textBox4.Text);
+                        if (width <= 0 || height <= 0)
+                        {
+                            MessageBox.Show("Ширина та висота мають бути більшими за нуль.");
+                            return;
+                        }
+                        if (checkBox1.Checked)
+                        {
+                            if (colorDialog1.ShowDialog() == DialogResult.Cancel) return;
+                            using (Brush zal = new SolidBrush(colorDialog1.Color))
+                            {
+                                if (comboBox1.SelectedIndex == 2)
+                                    Graf.FillEllipse(zal, x, y, width, height);
+                                else
+                                    Graf.FillRectangle(zal, x, y, width, height);
+                            }
+                        }
+                        else
+                        {
+                            if (comboBox1.SelectedIndex == 2)
+                                Graf.DrawEllipse(Pens.Black, x, y, width, height);
+                            else
+                                Graf.DrawRectangle(Pens.Black, x, y, width, height);
+                        }
+                    }
                 }
-                if (shape == 2)
-                {
-                    if (checkBox1.Checked)
-                        g.FillEllipse(brush, values[0], values[1], values[2], values[3]);
-                    else
-                        g.DrawEllipse(pen, values[0], values[1], values[2], values[3]);
-                }
-                if (shape == 3)
-                {
-                    if (checkBox1.Checked)
-                        g.FillRectangle(brush, values[0], values[1], values[2], values[3]);
-                    else
-                        g.DrawRectangle(pen, values[0], values[1], values[2], values[3]);
-                }
+                pictureBox1.Invalidate();
             }
-            pictureBox1.Invalidate();
+            catch (FormatException)
+            {
+                MessageBox.Show("Уведіть цілі числа в поля координат.");
+            }
+            catch (OverflowException)
+            {
+                MessageBox.Show("Уведене число надто велике.");
+            }
         }
 
         private void button2_Click(object sender, EventArgs e)
         {
-            ClearCanvas();
+            using (Graphics GC = Graphics.FromImage(bmp_for_draw))
+                GC.Clear(SystemColors.Window);
+            pictureBox1.Invalidate();
         }
 
+        // Завдання 1: вибір кольору кисті.
         private void button3_Click(object sender, EventArgs e)
         {
             colorDialog1.Color = brushColor;
             if (colorDialog1.ShowDialog() == DialogResult.OK)
-            {
                 brushColor = colorDialog1.Color;
-                button3.BackColor = brushColor;
-                button3.ForeColor = brushColor.GetBrightness() < 0.5f ? Color.White : Color.Black;
-            }
-        }
-
-        private void button4_Click(object sender, EventArgs e)
-        {
-            using (Graphics g = Graphics.FromImage(canvas))
-            using (Brush brush = new SolidBrush(brushColor))
-                g.DrawString(textBox7.Text, fontDialog1.Font, brush,
-                    (float)textX.Value, (float)textY.Value);
-            pictureBox1.Invalidate();
-        }
-
-        private void fontButton_Click(object sender, EventArgs e)
-        {
-            fontDialog1.ShowDialog();
-        }
-
-        private void pictureBox1_MouseDown(object sender, MouseEventArgs e)
-        {
-            if (e.Button != MouseButtons.Left) return;
-            drawing = true;
-            pictureBox1.Capture = true;
-            previousPoint = e.Location;
-            // Короткий клік теж залишає слід кисті.
-            float size = (float)numericUpDown1.Value;
-            using (Graphics g = Graphics.FromImage(canvas))
-            using (Brush brush = new SolidBrush(brushColor))
-                g.FillEllipse(brush, e.X - size / 2, e.Y - size / 2, size, size);
-            pictureBox1.Invalidate();
         }
 
         private void pictureBox1_MouseMove(object sender, MouseEventArgs e)
         {
-            if (!drawing) return;
-            using (Graphics g = Graphics.FromImage(canvas))
-            using (Pen pen = new Pen(brushColor, (float)numericUpDown1.Value))
+            if (Drow == true)
             {
-                pen.StartCap = pen.EndCap = LineCap.Round;
-                g.DrawLine(pen, previousPoint, e.Location);
+                using (Graphics graf = Graphics.FromImage(bmp_for_draw))
+                using (Brush brush = new SolidBrush(brushColor))
+                    graf.FillEllipse(brush, e.X, e.Y,
+                        Convert.ToInt32(numericUpDown1.Value),
+                        Convert.ToInt32(numericUpDown1.Value));
+                pictureBox1.Invalidate();
             }
-            previousPoint = e.Location;
-            pictureBox1.Invalidate();
+        }
+
+        private void pictureBox1_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                Drow = true;
+                pictureBox1.Capture = true;
+            }
         }
 
         private void pictureBox1_MouseUp(object sender, MouseEventArgs e)
         {
-            if (e.Button != MouseButtons.Left) return;
-            drawing = false;
-            pictureBox1.Capture = false;
+            if (e.Button == MouseButtons.Left)
+            {
+                Drow = false;
+                pictureBox1.Capture = false;
+            }
         }
 
         private void pictureBox1_MouseCaptureChanged(object sender, EventArgs e)
         {
-            if (!pictureBox1.Capture) drawing = false;
+            if (!pictureBox1.Capture) Drow = false;
         }
 
-        private void saveButton_Click(object sender, EventArgs e)
+        // Завдання 3: координати тексту задано в textBox8 і textBox9.
+        private void button4_Click(object sender, EventArgs e)
         {
-            if (saveFileDialog1.ShowDialog() != DialogResult.OK) return;
             try
             {
-                canvas.Save(saveFileDialog1.FileName, ImageFormat.Png);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Не вдалося зберегти рисунок: " + ex.Message);
-            }
-        }
-
-        private void openButton_Click(object sender, EventArgs e)
-        {
-            if (openFileDialog1.ShowDialog() != DialogResult.OK) return;
-            try
-            {
-                // Файл закривається після копіювання зображення на полотно.
-                using (Image image = Image.FromFile(openFileDialog1.FileName))
-                using (Graphics g = Graphics.FromImage(canvas))
+                String Text = String.Format("{0}", textBox7.Text);
+                using (Brush Кисть = new SolidBrush(Color.LimeGreen))
+                using (Graphics G = Graphics.FromImage(bmp_for_draw))
                 {
-                    g.Clear(Color.White);
-                    g.DrawImage(image, new Rectangle(0, 0, canvas.Width, canvas.Height));
+                    G.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+                    G.DrawString(Text, fontDialog1.Font, Кисть,
+                        Convert.ToInt32(textBox8.Text), Convert.ToInt32(textBox9.Text));
                 }
                 pictureBox1.Invalidate();
             }
-            catch (Exception ex)
+            catch (FormatException)
             {
-                MessageBox.Show("Не вдалося відкрити зображення: " + ex.Message);
+                MessageBox.Show("Уведіть цілі числа в координати тексту.");
             }
+            catch (OverflowException)
+            {
+                MessageBox.Show("Уведене число надто велике.");
+            }
+        }
+
+        // Завдання 4: стандартний діалог вибору шрифту.
+        private void button5_Click(object sender, EventArgs e)
+        {
+            fontDialog1.ShowDialog();
+        }
+
+        // Завдання 5: збереження рисунка.
+        private void button6_Click(object sender, EventArgs e)
+        {
+            using (SaveFileDialog savedialog = new SaveFileDialog())
+            {
+                savedialog.Filter = "PNG (*.png)|*.png";
+                savedialog.DefaultExt = "png";
+                if (savedialog.ShowDialog() == DialogResult.OK)
+                {
+                    try { bmp_for_draw.Save(savedialog.FileName, ImageFormat.Png); }
+                    catch (Exception ex) { MessageBox.Show("Помилка збереження: " + ex.Message); }
+                }
+            }
+        }
+
+        private void button7_Click(object sender, EventArgs e)
+        {
+            using (Form2 form = new Form2())
+                form.ShowDialog(this);
         }
 
         private void Form1_FormClosed(object sender, FormClosedEventArgs e)
         {
             pictureBox1.Image = null;
-            canvas.Dispose();
+            bmp_for_draw.Dispose();
         }
     }
 }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -142,6 +142,16 @@ namespace Практика4_Проект1
         {
             // Менший Interval означає швидше падіння.
             timer1.Interval = Convert.ToInt32(numericUpDown1.Value);
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            // Під час другої гри перша стоїть на паузі.
+            bool wasRunning = timer2.Enabled;
+            button2_Click(sender, e);
+            using (Form2 form = new Form2())
+                form.ShowDialog(this);
+            if (wasRunning) button1_Click(sender, e);
         }
 
         private void Form1_FormClosed(object sender, FormClosedEventArgs e)

@@ -1,6 +1,6 @@
-﻿namespace Практика4_Проект2
+﻿namespace Практика4_Проект1
 {
-    partial class Form1
+    partial class Form2
     {
         private System.ComponentModel.IContainer components = null;
 
@@ -134,7 +134,7 @@
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Name = "Form1";
+            this.Name = "Form2";
             this.Text = "Tic Tak Toe";
             this.Controls.Add(this.tableLayoutPanel1);
             this.Controls.Add(this.menuStrip1);

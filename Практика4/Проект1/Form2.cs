@@ -3,16 +3,16 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace Практика4_Проект2
+namespace Практика4_Проект1
 {
-    public partial class Form1 : Form
+    public partial class Form2 : Form
     {
         // Назви та перевірки перемоги — з методички.
         private char WHO = 'O';
         private short movement = 0;
         private Random r = new Random();
 
-        public Form1()
+        public Form2()
         {
             InitializeComponent();
             новаГраToolStripMenuItem_Click(this, EventArgs.Empty);
